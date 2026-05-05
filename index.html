@@ -29,7 +29,7 @@
   <div class="subtitle">工時管理系統</div>
   <hr class="divider">
   <div class="input-group">
-    <input type="text" id="empId" placeholder="員工編號" maxlength="10" autocomplete="off">
+    <input type="text" id="empId" placeholder="員工編號" maxlength="15" autocomplete="off">
   </div>
   <div class="input-group">
     <input type="password" id="password" placeholder="密碼" maxlength="20">
@@ -39,7 +39,6 @@
   <div class="loading" id="loading">驗證中，請稍候...</div>
   <span class="forgot" onclick="forgotPassword()">忘記密碼？</span>
 </div>
-
 <script>
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyahO2TVyslnTfDLDlKHjAlSgjtRekzAtKJkkcEOLsd09ov8txLPCwVsltxjiA2G93n/exec';
 
@@ -51,20 +50,17 @@ function doLogin(){
   const loading = document.getElementById('loading');
 
   errorMsg.textContent = '';
-
   if(!empId){errorMsg.textContent='請輸入員工編號';return}
   if(!password){errorMsg.textContent='請輸入密碼';return}
 
   btnLogin.disabled = true;
   loading.style.display = 'block';
 
-  fetch(GAS_URL, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action:'login',empId,password})
-  })
-  .then(r=>r.json())
-  .then(data=>{
+  const cbName = 'cb_' + Date.now();
+  window[cbName] = function(data){
+    const s = document.getElementById('jsonp_s');
+    if(s) document.body.removeChild(s);
+    delete window[cbName];
     if(data.success){
       sessionStorage.setItem('user', JSON.stringify(data.user));
       window.location.href = 'dashboard.html';
@@ -73,19 +69,28 @@ function doLogin(){
       btnLogin.disabled = false;
       loading.style.display = 'none';
     }
-  })
-  .catch(()=>{
+  };
+
+  const s = document.createElement('script');
+  s.id = 'jsonp_s';
+  s.onerror = function(){
     errorMsg.textContent = '連線失敗，請稍後再試';
     btnLogin.disabled = false;
     loading.style.display = 'none';
-  });
+  };
+  s.src = GAS_URL
+    + '?callback=' + cbName
+    + '&action=login'
+    + '&empId=' + encodeURIComponent(empId)
+    + '&password=' + encodeURIComponent(password);
+  document.body.appendChild(s);
 }
 
 function forgotPassword(){
   alert('請聯絡系統管理員重設密碼');
 }
 
-document.getElementById('password').addEventListener('keypress', function(e){
+document.getElementById('password').addEventListener('keypress',function(e){
   if(e.key==='Enter') doLogin();
 });
 </script>

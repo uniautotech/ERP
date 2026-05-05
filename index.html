@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNIAUTO 瑞宇科技 - 工時管理系統</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0d1b2a;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:'Microsoft JhengHei',sans-serif}
+  .container{width:100%;max-width:420px;padding:40px 32px;text-align:center}
+  .logo{font-size:36px;font-weight:900;color:#ffffff;letter-spacing:4px;margin-bottom:8px}
+  .subtitle{font-size:18px;color:#00e5cc;margin-bottom:40px;letter-spacing:2px}
+  .divider{border:none;border-top:1px solid #2a3f55;margin-bottom:40px}
+  .input-group{margin-bottom:16px;text-align:left}
+  input{width:100%;padding:16px 20px;background:#1a2d42;border:1.5px solid #2a3f55;border-radius:12px;color:#ffffff;font-size:16px;outline:none;transition:border 0.2s}
+  input::placeholder{color:#4a6278}
+  input:focus{border-color:#00e5cc}
+  .btn-login{width:100%;padding:16px;background:#00e5cc;border:none;border-radius:12px;color:#0d1b2a;font-size:18px;font-weight:700;cursor:pointer;margin-top:8px;letter-spacing:2px;transition:opacity 0.2s}
+  .btn-login:hover{opacity:0.85}
+  .btn-login:disabled{opacity:0.5;cursor:not-allowed}
+  .forgot{display:block;margin-top:20px;color:#00e5cc;font-size:14px;text-decoration:underline;cursor:pointer}
+  .error-msg{color:#ff6b6b;font-size:14px;margin-top:8px;min-height:20px;text-align:left}
+  .loading{display:none;color:#00e5cc;margin-top:12px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">UNIAUTO</div>
+  <div class="subtitle">工時管理系統</div>
+  <hr class="divider">
+  <div class="input-group">
+    <input type="text" id="empId" placeholder="員工編號" maxlength="10" autocomplete="off">
+  </div>
+  <div class="input-group">
+    <input type="password" id="password" placeholder="密碼" maxlength="20">
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+  <button class="btn-login" id="btnLogin" onclick="doLogin()">進入系統</button>
+  <div class="loading" id="loading">驗證中，請稍候...</div>
+  <span class="forgot" onclick="forgotPassword()">忘記密碼？</span>
+</div>
+
+<script>
+const GAS_URL = 'YOUR_GAS_URL_HERE';
+
+function doLogin(){
+  const empId = document.getElementById('empId').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const errorMsg = document.getElementById('errorMsg');
+  const btnLogin = document.getElementById('btnLogin');
+  const loading = document.getElementById('loading');
+
+  errorMsg.textContent = '';
+
+  if(!empId){errorMsg.textContent='請輸入員工編號';return}
+  if(!password){errorMsg.textContent='請輸入密碼';return}
+
+  btnLogin.disabled = true;
+  loading.style.display = 'block';
+
+  fetch(GAS_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'login',empId,password})
+  })
+  .then(r=>r.json())
+  .then(data=>{
+    if(data.success){
+      sessionStorage.setItem('user', JSON.stringify(data.user));
+      window.location.href = 'dashboard.html';
+    } else {
+      errorMsg.textContent = data.message || '員工編號或密碼錯誤';
+      btnLogin.disabled = false;
+      loading.style.display = 'none';
+    }
+  })
+  .catch(()=>{
+    errorMsg.textContent = '連線失敗，請稍後再試';
+    btnLogin.disabled = false;
+    loading.style.display = 'none';
+  });
+}
+
+function forgotPassword(){
+  alert('請聯絡系統管理員重設密碼');
+}
+
+document.getElementById('password').addEventListener('keypress', function(e){
+  if(e.key==='Enter') doLogin();
+});
+</script>
+</body>
+</html>

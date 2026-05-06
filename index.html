@@ -42,7 +42,7 @@
 <script>
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzsmfJpMglm1qDUjFaigLTEVKWOE4oaT092zf0277JzYz2wu2LLjL71-Lexr2OW3w75/exec';
 
-function doLogin(){
+async function doLogin(){
   const empId = document.getElementById('empId').value.trim();
   const password = document.getElementById('password').value.trim();
   const errorMsg = document.getElementById('errorMsg');
@@ -56,34 +56,27 @@ function doLogin(){
   btnLogin.disabled = true;
   loading.style.display = 'block';
 
-  const cbName = 'cb_' + Date.now();
-  window[cbName] = function(data){
-    const s = document.getElementById('jsonp_s');
-    if(s) document.body.removeChild(s);
-    delete window[cbName];
+  try {
+    const url = GAS_URL
+      + '?action=login'
+      + '&empId=' + encodeURIComponent(empId)
+      + '&password=' + encodeURIComponent(password);
+
+    const res = await fetch(url, {redirect: 'follow'});
+    const data = await res.json();
+
     if(data.success){
       sessionStorage.setItem('user', JSON.stringify(data.user));
       window.location.href = 'dashboard.html';
     } else {
       errorMsg.textContent = data.message || '員工編號或密碼錯誤';
-      btnLogin.disabled = false;
-      loading.style.display = 'none';
     }
-  };
-
-  const s = document.createElement('script');
-  s.id = 'jsonp_s';
-  s.onerror = function(){
+  } catch(err) {
     errorMsg.textContent = '連線失敗，請稍後再試';
+  } finally {
     btnLogin.disabled = false;
     loading.style.display = 'none';
-  };
-  s.src = GAS_URL
-    + '?callback=' + cbName
-    + '&action=login'
-    + '&empId=' + encodeURIComponent(empId)
-    + '&password=' + encodeURIComponent(password);
-  document.body.appendChild(s);
+  }
 }
 
 function forgotPassword(){
